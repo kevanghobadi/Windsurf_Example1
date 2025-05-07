@@ -37,7 +37,7 @@ const dbFile = path.join(__dirname, 'db.json');
  * @type {import('lowdb').Low}
  */
 const adapter = new JSONFile(dbFile);
-const db = new Low(adapter, { counter: 0, history: [] });
+const db = new Low(adapter, { counter: 0, history: [], deletedHistory: [] });
 
 /**
  * Reads the latest data from the database file.
@@ -46,6 +46,10 @@ const db = new Low(adapter, { counter: 0, history: [] });
  */
 async function initDb() {
   await db.read();
+  if (!Array.isArray(db.data.deletedHistory)) {
+    db.data.deletedHistory = [];
+    await db.write();
+  }
 }
 
 /**
@@ -131,11 +135,21 @@ app.get('/api/history', async (req, res) => {
  * @param {string} id - History record id (URL param)
  * @returns {void}
  */
+/**
+ * DELETE /api/history/:id
+ * Deletes a single history record by id and moves it to deletedHistory.
+ * @param {string} id - History record id (URL param)
+ * @returns {void}
+ */
 app.delete('/api/history/:id', async (req, res) => {
   await initDb();
   const { id } = req.params;
-  db.data.history = db.data.history.filter((item) => item.id !== id);
-  await db.write();
+  const idx = db.data.history.findIndex((item) => item.id === id);
+  if (idx !== -1) {
+    const [deleted] = db.data.history.splice(idx, 1);
+    db.data.deletedHistory.push(deleted);
+    await db.write();
+  }
   res.status(204).send();
 });
 
@@ -144,11 +158,65 @@ app.delete('/api/history/:id', async (req, res) => {
  * Clears all history records.
  * @returns {void}
  */
+/**
+ * DELETE /api/history
+ * Clears all history records and moves them to deletedHistory.
+ * @returns {void}
+ */
 app.delete('/api/history', async (req, res) => {
   await initDb();
+  db.data.deletedHistory.push(...db.data.history);
   db.data.history = [];
   await db.write();
   res.status(204).send();
+});
+
+/**
+ * Starts the Express server.
+ * Logs the port on successful startup.
+ */
+/**
+ * POST /api/history/restore
+ * Restores the most recently deleted history entry (LIFO stack).
+ * @returns {object} Restored entry or 404 if none
+ */
+app.post('/api/history/restore', async (req, res) => {
+  await initDb();
+  if (db.data.deletedHistory.length === 0) {
+    return res.status(404).json({ error: 'No deleted entries to restore.' });
+  }
+  const restored = db.data.deletedHistory.pop();
+  db.data.history.push(restored);
+  await db.write();
+  res.status(200).json(restored);
+});
+
+/**
+ * GET /api/history/deleted
+ * Returns all deleted history entries (for debugging or UI display).
+ * @returns {Array<{id: string, value: number, savedAt: string}>}
+ */
+app.get('/api/history/deleted', async (req, res) => {
+  await initDb();
+  res.json(db.data.deletedHistory);
+});
+
+/**
+ * Starts the Express server.
+ * Logs the port on successful startup.
+ */
+/**
+ * POST /api/database/reset
+ * Irreversibly clears the entire database: counter, history, deletedHistory.
+ * @returns { success: true }
+ */
+app.post('/api/database/reset', async (req, res) => {
+  await initDb();
+  db.data.counter = 0;
+  db.data.history = [];
+  db.data.deletedHistory = [];
+  await db.write();
+  res.json({ success: true });
 });
 
 /**

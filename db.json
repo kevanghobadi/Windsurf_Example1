@@ -1,4 +1,31 @@
 {
-  "counter": 0,
-  "history": []
+  "counter": 20,
+  "history": [
+    {
+      "id": "0ccf89c4-abd2-4834-abdf-f55f293731a2",
+      "value": 0,
+      "savedAt": "2025-05-07T20:18:24.933Z"
+    },
+    {
+      "id": "06b6e8bf-9387-4f9a-b60d-e454a8bdafc1",
+      "value": 0,
+      "savedAt": "2025-05-07T20:18:25.426Z"
+    },
+    {
+      "id": "7e086fc7-5314-4a29-8fc7-fccbd6f5f2d3",
+      "value": 0,
+      "savedAt": "2025-05-07T20:18:26.750Z"
+    },
+    {
+      "id": "8a0278bb-064d-4d12-85dc-50b63817290c",
+      "value": 10,
+      "savedAt": "2025-05-07T20:18:31.466Z"
+    },
+    {
+      "id": "d91ac6fa-3783-4567-9614-2d5ac5e6c3ab",
+      "value": 20,
+      "savedAt": "2025-05-07T20:18:33.792Z"
+    }
+  ],
+  "deletedHistory": []
 }
