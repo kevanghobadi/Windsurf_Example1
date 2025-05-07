@@ -95,9 +95,19 @@ app.post('/api/counter/decrement', async (req, res) => {
  * Resets the counter to zero.
  * @returns { value: number }
  */
+/**
+ * POST /api/counter/reset
+ * Resets the counter to zero or sets to a provided value.
+ * @param {number} [value] - (optional) Value to set counter to (in body)
+ * @returns { value: number }
+ */
 app.post('/api/counter/reset', async (req, res) => {
   await initDb();
-  db.data.counter = 0;
+  if (typeof req.body.value === 'number' && !isNaN(req.body.value)) {
+    db.data.counter = req.body.value;
+  } else {
+    db.data.counter = 0;
+  }
   await db.write();
   res.json({ value: db.data.counter });
 });
